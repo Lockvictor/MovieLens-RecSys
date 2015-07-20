@@ -55,3 +55,6 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Movie rating data
+ml-1m/
