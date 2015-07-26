@@ -58,3 +58,6 @@ target/
 
 # Movie rating data
 ml-1m/
+
+# run log
+log/

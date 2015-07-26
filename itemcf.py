@@ -8,20 +8,20 @@ import sys, random, math, operator
 
 random.seed(0)
 
-class UserBasedCF():
-    ''' TopN recommendation - UserBasedCF '''
+class ItemBasedCF():
+    ''' TopN recommendation - ItemBasedCF '''
     def __init__(self):
         self.trainset = {}
         self.testset = {}
 
-        self.simUserNum = 20
+        self.simMovieNum = 20
         self.recMovieNum = 10
 
-        self.userSimMatrix = {}
+        self.movieSimMatrix = {}
         self.moviePopularity = {}
         self.allMovieCount = 0
 
-        print >> sys.stderr, 'Similar user number = %d' % self.simUserNum
+        print >> sys.stderr, 'Similar movie number = %d' % self.simMovieNum
         print >> sys.stderr, 'Recommended movie number = %d' % self.recMovieNum
 
     @staticmethod
@@ -54,68 +54,59 @@ class UserBasedCF():
         print >> sys.stderr, 'train set = %s' % trainset_len
         print >> sys.stderr, 'test set = %s' % testset_len
 
-    def CalUserSimilarity(self):
+    def CalMovieSimilarity(self):
         ''' calculate user similarity matrix '''
-        # build inverse table for item-users
-        # key=movieID, value=list of userIDs who have seen this movie
-        print >> sys.stderr, 'building movie-users inverse table...'
-        movie2users = dict()
+        print >> sys.stderr, 'counting movies number and popularity...'
         for user,movies in self.trainset.iteritems():
             for movie in movies:
-                # inverse table for item-users
-                if movie not in movie2users:
-                    movie2users[movie] = set()
-                movie2users[movie].add(user)
-                # count item popularity at the same time
+                # count item popularity 
                 if movie not in self.moviePopularity:
                     self.moviePopularity[movie] = 0
                 self.moviePopularity[movie] += 1
-        print >> sys.stderr, 'build movie-users inverse table succ'
+        print >> sys.stderr, 'count movies number and popularity succ'
 
-        # save the total movie number, which will be used in evaluation
-        self.allMovieCount = len(movie2users)
+        # save the total number of movies
+        self.allMovieCount = len(self.moviePopularity)
         print >> sys.stderr, 'total movie number = %d' % self.allMovieCount
 
-        usersim_mat = self.userSimMatrix
-        # count co-rated items between users
-        print >> sys.stderr, 'building user co-rated movies matrix...'
-        for movie,users in movie2users.iteritems():
-            for u in users:
-                for v in users:
-                    if u == v: continue
-                    usersim_mat.setdefault(u,{})
-                    usersim_mat[u].setdefault(v,0)
-                    usersim_mat[u][v] += 1
-        print >> sys.stderr, 'build user co-rated movies matrix succ'
+        itemsim_mat = self.movieSimMatrix
+        # count co-rated users between items
+        print >> sys.stderr, 'building co-rated users matrix...'
+        for user,movies in self.trainset.iteritems():
+            for m1 in movies:
+                for m2 in movies:
+                    if m1 == m2: continue
+                    itemsim_mat.setdefault(m1,{})
+                    itemsim_mat[m1].setdefault(m2,0)
+                    itemsim_mat[m1][m2] += 1
+        print >> sys.stderr, 'build co-rated users matrix succ'
 
         # calculate similarity matrix 
-        print >> sys.stderr, 'calculating user similarity matrix...'
+        print >> sys.stderr, 'calculating movie similarity matrix...'
         simfactor_count = 0
         PRINT_STEP = 2000000
-        for u,related_users in usersim_mat.iteritems():
-            for v,count in related_users.iteritems():
-                usersim_mat[u][v] = count / math.sqrt(len(self.trainset[u])*len(self.trainset[v]))
+        for m1,related_movies in itemsim_mat.iteritems():
+            for m2,count in related_movies.iteritems():
+                itemsim_mat[m1][m2] = count / math.sqrt(self.moviePopularity[m1]*self.moviePopularity[m2])
                 simfactor_count += 1
                 if simfactor_count % PRINT_STEP == 0:
-                    print >> sys.stderr, 'calculating user similarity factor(%d)' % simfactor_count
-        print >> sys.stderr, 'calculate user similarity matrix(similarity factor) succ'
+                    print >> sys.stderr, 'calculating movie similarity factor(%d)' % simfactor_count
+        print >> sys.stderr, 'calculate movie similarity matrix(similarity factor) succ'
         print >> sys.stderr, 'Total similarity factor number = %d' %simfactor_count
 
     def Recommend(self, user):
-        ''' Find K similar users and recommend N movies. '''
-        K = self.simUserNum
+        ''' Find K similar movies and recommend N movies. '''
+        K = self.simMovieNum
         N = self.recMovieNum
         rank = dict()
         watched_movies = self.trainset[user]
 
-        # v=similar user, wuv=similarity factor
-        for v, wuv in sorted(self.userSimMatrix[user].items(), key = operator.itemgetter(1), reverse=True)[0:K]:
-            for movie in self.trainset[v]:
-                if movie in watched_movies:
+        for movie in watched_movies:
+            for related_movie,w in sorted(self.movieSimMatrix[movie].items(), key=operator.itemgetter(1), reverse=True)[0:K]:
+                if related_movie in watched_movies:
                     continue
-                # predict the user's "interest" for each movie
-                rank.setdefault(movie,0)
-                rank[movie] += wuv
+                rank.setdefault(related_movie,0)
+                rank[related_movie] += w
         # return the N best movies
         return sorted(rank.items(), key=operator.itemgetter(1), reverse=True)[0:N]
 
@@ -132,10 +123,14 @@ class UserBasedCF():
         # varables for popularity
         popular_sum = 0
 
+        i = 0
         for user in self.trainset:
+            i += 1
+            if i % 500 == 0:
+                print >> sys.stderr, 'recommended for %s users' % i
             test_movies = self.testset.get(user, {})
             rec_movies = self.Recommend(user)
-            for movie, interest_factor in rec_movies:
+            for movie,w in rec_movies:
                 if movie in test_movies:
                     hit += 1
                 all_rec_movies.add(movie)
@@ -151,7 +146,7 @@ class UserBasedCF():
 
 if __name__ == '__main__':
     ratingfile = 'ml-1m/ratings.dat'
-    usercf = UserBasedCF()
-    usercf.GenerateTrainTestSet(ratingfile)
-    usercf.CalUserSimilarity()
-    usercf.Evaluate()
+    itemcf = ItemBasedCF()
+    itemcf.GenerateTrainTestSet(ratingfile)
+    itemcf.CalMovieSimilarity()
+    itemcf.Evaluate()
