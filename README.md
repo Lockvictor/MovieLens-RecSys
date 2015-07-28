@@ -13,11 +13,11 @@ The recommendation result is evaluated by Precision, Recall, Coverage and Popula
 ```shell
 python usercf.py
 ```
-or if you are in Linux:
+if you are in Linux, the following command is preferred:
 ```shell
 python usercf.py > run.log 2>&1 &
 ```
 This command will let the program run in back stage and run.log will record all outputs of the program.
 
 ### Attention
-In UserBasedCF，the program will generate a big matrix which comsumes a lot of memories (about 2.2GB in my computer). So make sure that your computer have enough memories to run the program.
+In UserBasedCF,the program will generate a big matrix which comsumes a lot of memories (about 2.2GB in my computer). So make sure that your computer have enough memories to run the program.
