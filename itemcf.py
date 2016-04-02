@@ -117,13 +117,13 @@ class ItemBasedCF():
         rank = {}
         watched_movies = self.trainset[user]
 
-        for movie in watched_movies:
+        for movie, rating in watched_movies.iteritems():
             for related_movie, w in sorted(self.movie_sim_mat[movie].items(),
                     key=itemgetter(1), reverse=True)[:K]:
                 if related_movie in watched_movies:
                     continue
                 rank.setdefault(related_movie, 0)
-                rank[related_movie] += w
+                rank[related_movie] += w * rating
         # return the N best movies
         return sorted(rank.items(), key=itemgetter(1), reverse=True)[:N]
 
