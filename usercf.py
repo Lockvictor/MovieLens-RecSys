@@ -24,8 +24,8 @@ class UserBasedCF():
         self.movie_popular = {}
         self.movie_count = 0
 
-        print >> sys.stderr, 'Similar user number = %d' % self.n_sim_user
-        print >> sys.stderr, 'recommended movie number = %d' % self.n_rec_movie
+        print ( 'Similar user number = %d' % self.n_sim_user,file=sys.stderr)
+        print ('recommended movie number = %d' % self.n_rec_movie,file=sys.stderr)
 
 
     @staticmethod
@@ -35,9 +35,9 @@ class UserBasedCF():
         for i,line in enumerate(fp):
             yield line.strip('\r\n')
             if i%100000 == 0:
-                print >> sys.stderr, 'loading %s(%s)' % (filename, i)
+                print (  'loading %s(%s)' % (filename, i),file=sys.stderr)
         fp.close()
-        print >> sys.stderr, 'load %s succ' % filename
+        print (  'load %s succ' % filename,file=sys.stderr)
 
 
     def generate_dataset(self, filename, pivot=0.7):
@@ -57,19 +57,19 @@ class UserBasedCF():
                 self.testset[user][movie] = int(rating)
                 testset_len += 1
 
-        print >> sys.stderr, 'split training set and test set succ'
-        print >> sys.stderr, 'train set = %s' % trainset_len
-        print >> sys.stderr, 'test set = %s' % testset_len
+        print ( 'split training set and test set succ',file=sys.stderr)
+        print ( 'train set = %s' % trainset_len,file=sys.stderr)
+        print ( 'test set = %s' % testset_len,file=sys.stderr)
 
 
     def calc_user_sim(self):
         ''' calculate user similarity matrix '''
         # build inverse table for item-users
         # key=movieID, value=list of userIDs who have seen this movie
-        print >> sys.stderr, 'building movie-users inverse table...'
+        print ( 'building movie-users inverse table...',file=sys.stderr)
         movie2users = dict()
 
-        for user,movies in self.trainset.iteritems():
+        for user,movies in self.trainset.items():
             for movie in movies:
                 # inverse table for item-users
                 if movie not in movie2users:
@@ -79,39 +79,39 @@ class UserBasedCF():
                 if movie not in self.movie_popular:
                     self.movie_popular[movie] = 0
                 self.movie_popular[movie] += 1
-        print >> sys.stderr, 'build movie-users inverse table succ'
+        print ('build movie-users inverse table succ',file=sys.stderr)
 
         # save the total movie number, which will be used in evaluation
         self.movie_count = len(movie2users)
-        print >> sys.stderr, 'total movie number = %d' % self.movie_count
+        print ('total movie number = %d' % self.movie_count,file=sys.stderr)
 
         # count co-rated items between users
         usersim_mat = self.user_sim_mat
-        print >> sys.stderr, 'building user co-rated movies matrix...'
+        print ( 'building user co-rated movies matrix...',file=sys.stderr)
 
-        for movie,users in movie2users.iteritems():
+        for movie,users in movie2users.items():
             for u in users:
                 for v in users:
                     if u == v: continue
                     usersim_mat.setdefault(u,{})
                     usersim_mat[u].setdefault(v,0)
                     usersim_mat[u][v] += 1
-        print >> sys.stderr, 'build user co-rated movies matrix succ'
+        print ( 'build user co-rated movies matrix succ',file=sys.stderr)
 
         # calculate similarity matrix 
-        print >> sys.stderr, 'calculating user similarity matrix...'
+        print (  'calculating user similarity matrix...',file=sys.stderr)
         simfactor_count = 0
         PRINT_STEP = 2000000
-        for u,related_users in usersim_mat.iteritems():
-            for v,count in related_users.iteritems():
+        for u,related_users in usersim_mat.items():
+            for v,count in related_users.items():
                 usersim_mat[u][v] = count / math.sqrt(
                         len(self.trainset[u]) * len(self.trainset[v]))
                 simfactor_count += 1
                 if simfactor_count % PRINT_STEP == 0:
-                    print >> sys.stderr, 'calculating user similarity factor(%d)' % simfactor_count
+                    print (  'calculating user similarity factor(%d)' % simfactor_count,file=sys.stderr)
 
-        print >> sys.stderr, 'calculate user similarity matrix(similarity factor) succ'
-        print >> sys.stderr, 'Total similarity factor number = %d' %simfactor_count
+        print (  'calculate user similarity matrix(similarity factor) succ',file=sys.stderr)
+        print (  'Total similarity factor number = %d' %simfactor_count,file=sys.stderr)
 
 
     def recommend(self, user):
@@ -136,7 +136,7 @@ class UserBasedCF():
 
     def evaluate(self):
         ''' return precision, recall, coverage and popularity '''
-        print >> sys.stderr, 'Evaluation start...'
+        print (  'Evaluation start...',file=sys.stderr)
 
         N = self.n_rec_movie
         #  varables for precision and recall 
@@ -150,7 +150,7 @@ class UserBasedCF():
 
         for i, user in enumerate(self.trainset):
             if i % 500 == 0:
-                print >> sys.stderr, 'recommended for $d users' % i
+                print (  'recommended for $d users' % i,file=sys.stderr)
             test_movies = self.testset.get(user, {})
             rec_movies = self.recommend(user)
             for movie, w in rec_movies:
@@ -166,8 +166,8 @@ class UserBasedCF():
         coverage = len(all_rec_movies) / (1.0*self.movie_count)
         popularity = popular_sum / (1.0*rec_count)
 
-        print >> sys.stderr, 'precision=%.4f\trecall=%.4f\tcoverage=%.4f\tpopularity=%.4f' % \
-                (precision, recall, coverage, popularity)
+        print ( 'precision=%.4f\trecall=%.4f\tcoverage=%.4f\tpopularity=%.4f' % \
+                (precision, recall, coverage, popularity),file=sys.stderr)
 
 
 if __name__ == '__main__':
