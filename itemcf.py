@@ -7,6 +7,7 @@ Created on 2015-06-22
 import sys
 import random
 import math
+import os
 from operator import itemgetter
 
 
@@ -164,7 +165,7 @@ class ItemBasedCF(object):
 
 
 if __name__ == '__main__':
-    ratingfile = 'ml-1m/ratings.dat'
+    ratingfile = os.path.join('ml-1m', 'ratings.dat')
     itemcf = ItemBasedCF()
     itemcf.generate_dataset(ratingfile)
     itemcf.calc_movie_sim()
