@@ -58,6 +58,10 @@ target/
 
 # Movie rating data
 ml-1m/
+ml-1m.zip
 
 # run log
 log/
+
+# vscode
+.vscode/
