@@ -10,6 +10,7 @@ import math
 import os
 from operator import itemgetter
 
+from collections import defaultdict
 
 random.seed(0)
 
@@ -93,11 +94,10 @@ class UserBasedCF(object):
 
         for movie, users in movie2users.items():
             for u in users:
+                usersim_mat.setdefault(u, defaultdict(int))
                 for v in users:
                     if u == v:
                         continue
-                    usersim_mat.setdefault(u, {})
-                    usersim_mat[u].setdefault(v, 0)
                     usersim_mat[u][v] += 1
         print ('build user co-rated movies matrix succ', file=sys.stderr)
 
