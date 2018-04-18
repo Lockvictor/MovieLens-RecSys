@@ -10,6 +10,7 @@ import math
 import os
 from operator import itemgetter
 
+from collections import defaultdict
 
 random.seed(0)
 
@@ -87,11 +88,10 @@ class ItemBasedCF(object):
 
         for user, movies in self.trainset.items():
             for m1 in movies:
+                itemsim_mat.setdefault(m1, defaultdict(int))
                 for m2 in movies:
                     if m1 == m2:
                         continue
-                    itemsim_mat.setdefault(m1, {})
-                    itemsim_mat[m1].setdefault(m2, 0)
                     itemsim_mat[m1][m2] += 1
 
         print('build co-rated users matrix succ', file=sys.stderr)
